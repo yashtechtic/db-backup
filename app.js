@@ -8,11 +8,14 @@ const archiver = require("archiver");
 const app = express();
 const PORT = process.env.PORT || 4001;
 const STORAGE_DIR = path.join(__dirname, "storage");
+require('dotenv').config();
 
 // Ensure the storage directory exists
 if (!fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR);
 }
+// Serve static files from the storage directory
+app.use('/storage', express.static(STORAGE_DIR));
 
 // Endpoint to trigger the backup process
 app.get("/backup", (req, res) => {
@@ -20,8 +23,11 @@ app.get("/backup", (req, res) => {
     if (error) {
       return res.status(500).send({ code: 500, error: "Backup failed" });
     }
-    console.log("backupPath :>> ", backupPath);
     // res.download(backupPath);
+    const filename = path.basename(backupPath);
+    const publicUrl = `${req.protocol}://${req.get('host')}/storage/${filename}`;
+    console.log("publicUrl :>> ", publicUrl);
+    res.send({ url: publicUrl });
   });
 });
 
@@ -32,7 +38,7 @@ function performBackup(callback) {
   const backupPath = path.join(STORAGE_DIR, backupFilename);
   const zipFilename = `backup-${currentDate}.zip`;
   const zipPath = path.join(STORAGE_DIR, zipFilename);
-
+  console.log('process.env.NODE_ENV :>> ', process.env.NODE_ENV);
   const command =
     process.env.NODE_ENV === "production"
       ? `mysqldump --defaults-extra-file='~/.my.cnf' --opt --all-databases > ${backupPath}`

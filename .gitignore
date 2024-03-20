@@ -1,2 +1,3 @@
-./node_modues   
-./storage   
+node_modules/
+storage/   
+.my.cnf
